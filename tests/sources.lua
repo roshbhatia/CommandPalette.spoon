@@ -1,6 +1,7 @@
 local root = assert(arg[1])
 package.path = root .. "/?.lua;" .. root .. "/?/init.lua;" .. package.path
 local resources, last, clips = {}, nil, 0
+local shown, hidden = nil, 0
 local function resource()
   local item = { stopped = false }
   function item:stop()
@@ -46,6 +47,12 @@ package.preload["command_palette.panel"] = function()
     stage = function(value)
       last = value
     end,
+    show = function(value)
+      shown = value
+    end,
+    hide = function()
+      hidden = hidden + 1
+    end,
     visible = function()
       return false
     end,
@@ -73,4 +80,31 @@ spoon:stop()
 for _, item in ipairs(resources) do
   assert(item.stopped)
 end
+spoon:configure({ appDirs = {}, stateDir = "/tmp/palette-sources-test" }):start()
+local calls, picked = 0, nil
+local function record(row)
+  calls = calls + 1
+  picked = row
+end
+
+spoon:pick({ rows = { { text = "one" }, { text = "two" } }, placeholder = "Which", verb = "Review" }, record)
+assert(shown ~= nil and #shown.rows == 2, "pick did not show its own rows")
+assert(shown.placeholder == "Which", "pick dropped its placeholder")
+assert(shown.hints[1][2] == "Review" and shown.hints[2][2] == "Cancel", "pick hints ignored the verb")
+
+last = nil
+shown.choose(shown.rows[2], {})
+assert(hidden == 1, "a chosen pick left the panel up")
+assert(calls == 1 and picked.text == "two", "pick reported the wrong row")
+assert(last ~= nil and last.name == "base", "pick left its own list staged")
+shown.closed()
+assert(calls == 1, "a chosen pick also reported a cancel")
+
+spoon:pick({ rows = { { text = "one" } } }, record)
+last = nil
+shown.closed()
+assert(calls == 2 and picked == nil, "a dismissed pick did not report a cancel")
+assert(last ~= nil and last.name == "base", "a dismissed pick left its own list staged")
+spoon:stop()
+
 print("source tests passed")

@@ -77,4 +77,12 @@ function obj:toggle()
   return self
 end
 
+---@param spec table
+---@param callback fun(row: table|nil, mods: table|nil)
+function obj:pick(spec, callback)
+  assert(core, "start CommandPalette before picking with it")
+  core.pick(spec, callback)
+  return self
+end
+
 return obj

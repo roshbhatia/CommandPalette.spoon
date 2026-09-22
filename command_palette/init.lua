@@ -991,4 +991,42 @@ function M.stop()
   panel.stop()
 end
 
+-- Shows a transient list in place of the base list and reports the chosen row.
+-- A dismissed panel reports no row, so a caller that opens something on a pick
+-- opens nothing on an escape.
+---@param spec table
+---@param callback fun(row: table|nil, mods: table|nil)
+function M.pick(spec, callback)
+  spec = spec or {}
+  local verb = spec.verb or "Open"
+  local handled = false
+  local function settle(row, mods)
+    -- Puts the base list back under the panel, so the next hotkey opens it
+    -- rather than reopening this one.
+    compose()
+    if callback then
+      callback(row, mods)
+    end
+  end
+  panel.show({
+    name = "pick",
+    rows = spec.rows or {},
+    placeholder = spec.placeholder or "Choose",
+    verb = verb,
+    hints = { { "&#8629;", verb }, { "esc", "Cancel" } },
+    choose = function(row, mods)
+      handled = true
+      panel.hide()
+      settle(row, mods)
+    end,
+    closed = function()
+      if handled then
+        return
+      end
+      handled = true
+      settle(nil, nil)
+    end,
+  })
+end
+
 return M

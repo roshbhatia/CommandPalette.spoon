@@ -2,7 +2,14 @@ local root = assert(arg[1], "hammerspoon root is required")
 
 package.path = root .. "/?.lua;" .. root .. "/?/init.lua;" .. package.path
 package.preload["command_palette.fzf"] = function()
-  return {}
+  return {
+    ensure = function() end,
+    index_path = function(name)
+      return "/tmp/palette-panel-test/" .. name
+    end,
+    write_index = function() end,
+    filter = function() end,
+  }
 end
 package.preload["sysinit.pkg.utils.json_loader"] = function()
   return {
@@ -44,6 +51,14 @@ function view:shadow()
 end
 
 function view:html()
+  return self
+end
+
+function view:frame(rect)
+  if rect == nil then
+    return self.rect or { x = 0, y = 0, w = 920, h = 400 }
+  end
+  self.rect = rect
   return self
 end
 
@@ -129,6 +144,19 @@ _G.hs = {
       return { stop = function() end }
     end,
   },
+  eventtap = {
+    event = { types = { leftMouseDown = 1 } },
+    new = function()
+      return {
+        start = function(self)
+          return self
+        end,
+        stop = function(self)
+          return self
+        end,
+      }
+    end,
+  },
   task = {
     new = function(tool, callback_work, args)
       local task = { tool = tool, args = args, started = false }
@@ -181,5 +209,22 @@ end
 
 assert(emoji_sent == 1, "emoji initialization was dropped, or a non-JSON dataset reached the page")
 assert(saw_commands, "shell command initialization was dropped before page load")
+
+-- A transient list learns that it lost the panel, which is what lets a pick
+-- report a cancel instead of leaving its caller waiting.
+local cancels = 0
+panel.show({
+  name = "pick",
+  rows = { { text = "one" } },
+  placeholder = "Which",
+  closed = function()
+    cancels = cancels + 1
+  end,
+})
+assert(panel.visible(), "show left the panel hidden")
+callback({ body = { action = "close" } })
+assert(cancels == 1, "the page closing the panel never reached the list")
+callback({ body = { action = "close" } })
+assert(cancels == 1, "an already closed panel reported closing again")
 
 print("panel tests passed")

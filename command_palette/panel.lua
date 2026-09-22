@@ -628,12 +628,19 @@ function M.hide()
   if not M.visible() then
     return
   end
+  local list = current()
   if watch then
     watch:stop()
     watch = nil
   end
   view:evaluateJavaScript("dismiss()")
   closing = hs.timer.doAfter(closing_secs, withdraw)
+  -- A transient list is the only thing the panel holds while it is up, so it has
+  -- to learn that it lost the panel. A chosen row marks itself handled first,
+  -- which is what keeps a pick from also reporting a cancel.
+  if list ~= nil and list.closed then
+    list.closed()
+  end
 end
 
 function M.stop()

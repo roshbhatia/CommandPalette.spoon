@@ -15,6 +15,31 @@ spoon.CommandPalette
 Loading the Spoon does not start sources or bind keys. `start()` and `stop()` are idempotent.
 Stop before changing configuration. Stopping removes owned hotkeys, timers, watchers, tasks, and the webview.
 
+## Picking from your own list
+
+`pick` shows a transient list in the panel instead of the base list and reports the chosen row.
+Use it to reuse the palette for a prompt of your own.
+
+```lua
+spoon.CommandPalette:pick({
+  placeholder = "owner/repo#123",
+  verb = "Review",
+  rows = {
+    { text = "gh dash", detail = "Dashboard, checks, and review actions", label = "Review", glyph = "command" },
+    { text = "Firefox", detail = "Open on github.com", label = "Review", glyph = "command" },
+  },
+}, function(row)
+  if row == nil then
+    return -- dismissed; open nothing
+  end
+  hs.alert.show(row.text)
+end)
+```
+
+The callback gets the chosen row and the held modifiers, or `nil` when the panel is dismissed,
+so a caller that opens something on a pick opens nothing on an escape. The base list is put back
+under the panel either way. `pick` requires a started Spoon.
+
 ## Optional sources
 
 Pass these keys to `configure`. External command values are executable paths.
