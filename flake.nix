@@ -43,6 +43,7 @@
                     stylua --config-path ${./stylua.toml} --check ${./init.lua} ${./command_palette} ${./tests}
                     lua ${./tests/panel.lua} ${./.}
                     lua ${./tests/lifecycle.lua} ${./.}
+                    lua ${./tests/pick_history.lua} ${./.}
                 lua ${./tests/sources.lua} ${./.}
                     node ${./tests/actions.mjs} ${./command_palette/page/actions.js} ${./command_palette/page/panel.html}
                     touch "$out"

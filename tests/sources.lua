@@ -107,4 +107,25 @@ assert(calls == 2 and picked == nil, "a dismissed pick did not report a cancel")
 assert(last ~= nil and last.name == "base", "a dismissed pick left its own list staged")
 spoon:stop()
 
+local history, writes = {}, 0
+hs.settings = {
+  get = function(key)
+    return history[key]
+  end,
+  set = function(key, value)
+    history[key] = value
+    writes = writes + 1
+  end,
+}
+spoon:start()
+local spec =
+  { rows = { { text = "one", target = 1 }, { text = "two", target = 2 } }, historyKey = "pull", showStatus = false }
+spoon:pick(spec, record)
+assert(shown.showStatus == false)
+shown.choose(shown.rows[2], {})
+spoon:pick(spec, record)
+assert(shown.rows[1].target == 2, "ranked choice lost its original target")
+shown.closed()
+assert(writes == 1, "dismissal changed history")
+spoon:stop()
 print("source tests passed")

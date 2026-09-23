@@ -24,6 +24,8 @@ Use it to reuse the palette for a prompt of your own.
 spoon.CommandPalette:pick({
   placeholder = "owner/repo#123",
   verb = "Review",
+  showStatus = false,
+  historyKey = "github.pull",
   rows = {
     { text = "gh dash", detail = "Dashboard, checks, and review actions", label = "Review", glyph = "command" },
     { text = "Firefox", detail = "Open on github.com", label = "Review", glyph = "command" },
@@ -39,6 +41,11 @@ end)
 The callback gets the chosen row and the held modifiers, or `nil` when the panel is dismissed,
 so a caller that opens something on a pick opens nothing on an escape. The base list is put back
 under the panel either way. `pick` requires a started Spoon.
+
+`showStatus = false` hides the machine status for this picker. Other lists keep their status.
+`historyKey` enables persistent frecency ranking within that scope. Each selection adds one point;
+scores halve every seven days. Ties retain the supplied order. Dismissal records nothing.
+Rows use `id` as their history key when supplied, otherwise `text`.
 
 ## Optional sources
 

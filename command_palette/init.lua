@@ -7,6 +7,7 @@ local files = require("command_palette.files")
 local fzf = require("command_palette.fzf")
 local panel = require("command_palette.panel")
 local recency = require("command_palette.recency")
+local pick_history = require("command_palette.pick_history")
 local settings_panes = require("command_palette.settings")
 local screenshots = options.config.screenshots
 
@@ -1010,11 +1011,13 @@ function M.pick(spec, callback)
   end
   panel.show({
     name = "pick",
-    rows = spec.rows or {},
+    rows = pick_history.sort(spec.historyKey, spec.rows or {}),
+    showStatus = spec.showStatus,
     placeholder = spec.placeholder or "Choose",
     verb = verb,
     hints = { { "&#8629;", verb }, { "esc", "Cancel" } },
     choose = function(row, mods)
+      pick_history.touch(spec.historyKey, row)
       handled = true
       panel.hide()
       settle(row, mods)

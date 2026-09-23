@@ -314,7 +314,7 @@ local function prepare()
     hints = list.hints,
     -- Carried on every open rather than pushed when it changes, because it only
     -- ever changes while the panel is hidden.
-    status = status or { text = "", on = false },
+    status = list.showStatus == false and { text = "", on = false } or status or { text = "", on = false },
   }) .. ")")
   prepared = list
 end

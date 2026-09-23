@@ -24,6 +24,7 @@ end
 
 local callback = nil
 local scripts = {}
+local encoded = {}
 local view = { visible = false }
 local alerts = {}
 local bindings = {}
@@ -111,7 +112,8 @@ _G.hs = {
     end,
   },
   json = {
-    encode = function()
+    encode = function(value)
+      encoded[#encoded + 1] = value
       return "[]"
     end,
   },
@@ -227,4 +229,10 @@ assert(cancels == 1, "the page closing the panel never reached the list")
 callback({ body = { action = "close" } })
 assert(cancels == 1, "an already closed panel reported closing again")
 
+panel.status("Caffeinate off", false)
+panel.show({ name = "review", rows = {}, showStatus = false })
+assert(encoded[#encoded].status.text == "", "review picker leaked machine status")
+panel.hide()
+panel.show({ name = "base", rows = {} })
+assert(encoded[#encoded].status.text == "Caffeinate off", "picker changed the base status")
 print("panel tests passed")
