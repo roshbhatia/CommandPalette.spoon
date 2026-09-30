@@ -473,15 +473,21 @@ local function terminal(command)
     compose()
     args[#args + 1] = "--"
     args[#args + 1] = shell
-    args[#args + 1] = "-lc"
-    args[#args + 1] = command .. "\nexec " .. string.format("%q", shell) .. " -l"
+    if shell:match("[^/]+$") == "nu" then
+      args[#args + 1] = "--login"
+      args[#args + 1] = "--execute"
+      args[#args + 1] = command
+    else
+      args[#args + 1] = "-lc"
+      args[#args + 1] = command .. "\nexec " .. string.format("%q", shell) .. " -l"
+    end
   end
   run(args)
 end
 
 local function browser_focus()
   local name = settings().browser or "Firefox"
-  hs.application.launchOrFocus(name)
+  run({ "/usr/bin/open", "-a", name })
 end
 
 ---@param value string
@@ -695,13 +701,13 @@ local function activate(choice)
   recency.touch(choice)
 
   if choice.kind == "app" then
-    hs.application.launchOrFocus(choice.path)
+    run({ "/usr/bin/open", "-a", choice.path })
   elseif choice.kind == "pane" then
     local wezterm = settings().wezterm
     if wezterm then
       run({ wezterm, "cli", "--no-auto-start", "activate-pane", "--pane-id", tostring(choice.pane_id) })
     end
-    hs.application.launchOrFocus("WezTerm")
+    run({ "/usr/bin/open", "-a", "WezTerm" })
   elseif choice.kind == "session" then
     local wezterm = settings().wezterm
     if wezterm and choice.path then
@@ -720,7 +726,7 @@ local function activate(choice)
     if choice.url then
       hs.urlevent.openURL(choice.url)
     elseif choice.run then
-      hs.execute(choice.run, true)
+      run({ settings().shell or "/bin/zsh", "-lc", choice.run })
     end
   end
 end
@@ -893,7 +899,18 @@ function M.setup()
   panel.emoji(emoji.dataset(settings().emoji))
   local shell = settings().shell
   if shell then
-    run({ shell, "-fc", "print -rl -- ${(ok)commands}" }, function(out)
+    local commandArgs
+    if shell:match("[^/]+$") == "nu" then
+      commandArgs = {
+        shell,
+        "--login",
+        "--commands",
+        "scope commands | get name | append (which | get command) | uniq | str join (char newline)",
+      }
+    else
+      commandArgs = { shell, "-fc", "print -rl -- ${(ok)commands}" }
+    end
+    run(commandArgs, function(out)
       local commands, seen = {}, {}
       for command in (out or ""):gmatch("[^\r\n]+") do
         if command:match("^[%w_][%w_.+%-]*$") and not seen[command] then

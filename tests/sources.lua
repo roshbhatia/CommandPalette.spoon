@@ -128,4 +128,43 @@ assert(shown.rows[1].target == 2, "ranked choice lost its original target")
 shown.closed()
 assert(writes == 1, "dismissal changed history")
 spoon:stop()
+local launched = {}
+hs.task = {
+  new = function(path, callback, args)
+    local task = { path = path, args = args, callback = callback }
+    function task:start()
+      self.started = true
+      launched[#launched + 1] = self
+      return self
+    end
+    function task:terminate()
+      self.terminated = true
+    end
+    return task
+  end,
+}
+hs.application = {
+  launchOrFocus = function()
+    error("application launch must be asynchronous")
+  end,
+}
+hs.execute = function()
+  error("shell commands must be asynchronous")
+end
+spoon:configure({ appDirs = {}, shell = "/profile/bin/nu", wezterm = "/profile/bin/wezterm" }):start()
+last.choose({ kind = "app", path = "/Applications/An App.app", text = "An App" }, {})
+local app = launched[#launched]
+assert(app.started and app.path == "/usr/bin/open")
+assert(app.args[1] == "-a" and app.args[2] == "/Applications/An App.app")
+last.shell("[1 2 3] | math sum")
+local terminalTask = launched[#launched]
+assert(terminalTask.path == "/profile/bin/wezterm")
+assert(terminalTask.args[5] == "/profile/bin/nu")
+assert(terminalTask.args[6] == "--login" and terminalTask.args[7] == "--execute")
+assert(terminalTask.args[8] == "[1 2 3] | math sum")
+last.choose({ kind = "command", text = "Run", run = "print 'hello'" }, {})
+local command = launched[#launched]
+assert(command.path == "/profile/bin/nu" and command.args[2] == "print 'hello'")
+spoon:stop()
+assert(app.terminated and terminalTask.terminated and command.terminated)
 print("source tests passed")
