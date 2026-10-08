@@ -1,0 +1,25 @@
+command_palette/init.lua
+  s_de281cf8e5cd4f::t_7f29d34c335383 115
+command_palette/tasks.lua
+  s_de281cf8e5cd4f::t_11ae898a0af218 4-9,15,29
+tests/lifecycle.lua
+  s_de281cf8e5cd4f::t_6c0b23177639b1 45,50-53,73
+tests/sources.lua
+  s_de281cf8e5cd4f::t_45dfd9cdefd754 135-137,187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c0074b3166315700dea6524137d1a0d618ab118c",
+  "prompts": {},
+  "sessions": {
+    "s_de281cf8e5cd4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11307-12eb-7480-afb6-c32a40ba7deb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
