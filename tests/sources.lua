@@ -132,6 +132,9 @@ local launched = {}
 hs.task = {
   new = function(path, callback, args)
     local task = { path = path, args = args, callback = callback }
+    function task:setCallback(value)
+      self.callback = value
+    end
     function task:start()
       self.started = true
       launched[#launched + 1] = self
@@ -181,6 +184,7 @@ last.choose({ kind = "command", text = "Broken", url = "not a URL" }, {})
 assert(#launched == count and #reports == 1, "invalid URL must report without launching")
 hs.task.new = function()
   return {
+    setCallback = function() end,
     start = function()
       return false
     end,

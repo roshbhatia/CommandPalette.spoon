@@ -42,11 +42,15 @@ spoon:stop():stop():toggle()
 assert(stopped == 1 and deleted == 1 and toggled == 1)
 spoon:start():stop()
 assert(started == 2 and stopped == 2 and bound == deleted)
-local callbacks, terminated, results = {}, 0, 0
+local callbacks, terminated, results, released = {}, 0, 0, 0
 hs.task = {
   new = function(_, callback)
     callbacks[#callbacks + 1] = callback
     return {
+      setCallback = function(_, callback)
+        assert(callback == nil)
+        released = released + 1
+      end,
       terminate = function()
         terminated = terminated + 1
       end,
@@ -66,4 +70,5 @@ end, {})
 callbacks[2](0, "current")
 tasks.stop()
 assert(results == 1 and terminated == 1)
+assert(released == 2, "completed and cancelled tasks must release callbacks")
 print("lifecycle tests passed")

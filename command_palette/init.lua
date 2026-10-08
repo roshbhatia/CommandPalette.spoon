@@ -112,6 +112,7 @@ local function run(args, cb)
     return
   end
   if not task:start() then
+    tasks.release(task)
     failed("Cannot start command: " .. args[1])
   end
 end
