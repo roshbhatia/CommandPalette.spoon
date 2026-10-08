@@ -165,6 +165,30 @@ assert(terminalTask.args[8] == "[1 2 3] | math sum")
 last.choose({ kind = "command", text = "Run", run = "print 'hello'" }, {})
 local command = launched[#launched]
 assert(command.path == "/profile/bin/nu" and command.args[2] == "print 'hello'")
+local reports = {}
+hs.printf = function() end
+hs.alert = {
+  show = function(message)
+    reports[#reports + 1] = message
+  end,
+}
+last.choose({ kind = "pref", text = "Keyboard", url = "x-apple.systempreferences:com.apple.preference.keyboard" }, {})
+local preference = launched[#launched]
+assert(preference.path == "/usr/bin/open")
+assert(preference.args[1] == "x-apple.systempreferences:com.apple.preference.keyboard")
+local count = #launched
+last.choose({ kind = "command", text = "Broken", url = "not a URL" }, {})
+assert(#launched == count and #reports == 1, "invalid URL must report without launching")
+hs.task.new = function()
+  return {
+    start = function()
+      return false
+    end,
+    terminate = function() end,
+  }
+end
+last.choose({ kind = "app", text = "Missing", path = "/missing.app" }, {})
+assert(#reports == 2, "failed task start must be reported")
 spoon:stop()
 assert(app.terminated and terminalTask.terminated and command.terminated)
 print("source tests passed")

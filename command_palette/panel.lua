@@ -1,3 +1,4 @@
+local boundary = require("command_palette.boundary")
 local fzf = require("command_palette.fzf")
 local options = require("command_palette.options")
 
@@ -35,6 +36,7 @@ local shrinking = nil
 local height = 0
 local pushed = nil
 local prepared = nil
+local transportFailed = false
 local warming = false
 -- Held at module scope for the reason `screens` gives above. A timer nothing
 -- references is stopped by the first collection, and the warm-up would then
@@ -267,10 +269,27 @@ local function reindex(list)
   written[name] = list.stamp
 end
 
+local function send(name, payload)
+  local encoded, err = boundary.encode(payload)
+  if not encoded then
+    transportFailed = true
+    prepared, pushed = nil, nil
+    sent = {}
+    if view then
+      view:hide()
+    end
+    hs.printf("CommandPalette %s: %s", name, err)
+    hs.alert.show("CommandPalette could not display this data; check the console")
+    return false
+  end
+  view:evaluateJavaScript(name .. "(" .. encoded .. ")")
+  return true
+end
+
 ---@param fresh table<string, string>
 local function icons(fresh)
   if next(fresh) ~= nil then
-    view:evaluateJavaScript("setIcons(" .. hs.json.encode(fresh) .. ")")
+    send("setIcons", fresh)
   end
 end
 
@@ -281,14 +300,16 @@ local function push()
   end
   local out, fresh = transport(opening_rows(list), nil)
   icons(fresh)
-  view:evaluateJavaScript("setRows(" .. hs.json.encode(out) .. ")")
-  pushed = list
+  if send("setRows", out) and not transportFailed then
+    pushed = list
+  end
 end
 
 -- Resets the page for the list it is about to show. Called while the window is
 -- hidden, so the rows, the height and the query are all already right by the
 -- time anything is drawn.
 local function prepare()
+  transportFailed = false
   local list = current()
   if view == nil or list == nil then
     return
@@ -298,7 +319,7 @@ local function prepare()
   if pushed ~= list then
     push()
   end
-  view:evaluateJavaScript("open(" .. hs.json.encode({
+  send("open", {
     placeholder = list.placeholder or "Search",
     verb = list.verb or "Open",
     split = list.preview ~= nil,
@@ -315,8 +336,10 @@ local function prepare()
     -- Carried on every open rather than pushed when it changes, because it only
     -- ever changes while the panel is hidden.
     status = list.showStatus == false and { text = "", on = false } or status or { text = "", on = false },
-  }) .. ")")
-  prepared = list
+  })
+  if not transportFailed then
+    prepared = list
+  end
 end
 
 ---@param list table
@@ -336,7 +359,7 @@ local function matched(list, body)
     end
     local out, fresh = transport(rows, at)
     icons(fresh)
-    view:evaluateJavaScript("setMatches(" .. hs.json.encode({ seq = body.seq, rows = out }) .. ")")
+    send("setMatches", { seq = body.seq, rows = out })
   end)
 end
 
@@ -374,6 +397,9 @@ end
 ---@param message table
 local function received(message)
   local body = message and message.body or {}
+  if transportFailed and body.action ~= "loaded" then
+    return
+  end
   local list = current()
   if body.action == "loaded" then
     loaded = true
@@ -406,7 +432,7 @@ local function received(message)
     if row and list.preview then
       list.preview(row, function(html)
         if view and current() == list then
-          view:evaluateJavaScript("setPreview(" .. hs.json.encode({ index = body.index, html = html }) .. ")")
+          send("setPreview", { index = body.index, html = html })
         end
       end)
     end
@@ -546,7 +572,7 @@ end
 ---@param commands string[]
 function M.shell_commands(commands)
   ready(function()
-    view:evaluateJavaScript("setCommands(" .. hs.json.encode(commands) .. ")")
+    send("setCommands", commands)
   end)
 end
 
@@ -603,6 +629,9 @@ function M.show(list)
     -- is a show and a reveal. Preparing here is the fallback for the first one.
     if prepared ~= current() then
       prepare()
+    end
+    if transportFailed then
+      return
     end
     -- Last, because staging framed the window on whichever screen the mouse was
     -- on then, and the mouse has moved since.

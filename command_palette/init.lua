@@ -1,3 +1,4 @@
+local boundary = require("command_palette.boundary")
 local ansi = require("command_palette.ansi")
 local options = require("command_palette.options")
 local tasks = require("command_palette.tasks")
@@ -83,19 +84,46 @@ end
 
 ---@param args string[]
 ---@param cb fun(out: string|nil)|nil
+local reportedFailures = {}
 local function run(args, cb)
-  local task = tasks.new(args[1], function(code, out)
+  local function failed(message)
+    if reportedFailures[args[1]] ~= message then
+      hs.printf("CommandPalette: %s", message)
+      reportedFailures[args[1]] = message
+    end
     if cb then
-      cb(code == 0 and out or nil)
+      cb(nil)
+    else
+      hs.alert.show(message)
+    end
+  end
+  local task = tasks.new(args[1], function(code, out)
+    if code ~= 0 then
+      failed("Command failed (" .. tostring(code) .. "): " .. args[1])
+    else
+      reportedFailures[args[1]] = nil
+      if cb then
+        cb(out)
+      end
     end
   end, { table.unpack(args, 2) })
   if task == nil then
-    if cb then
-      cb(nil)
-    end
+    failed("Cannot create command: " .. args[1])
     return
   end
-  task:start()
+  if not task:start() then
+    failed("Cannot start command: " .. args[1])
+  end
+end
+
+local function open_url(value)
+  local url, err = boundary.url(value)
+  if not url then
+    hs.printf("CommandPalette: %s", err)
+    hs.alert.show(err)
+    return
+  end
+  run({ "/usr/bin/open", url })
 end
 
 ---@param args string[]
@@ -496,10 +524,10 @@ local function browser_open(value)
   if url == "" then
     return
   end
-  if not url:match("^[%a][%w+.-]*://") then
+  if not url:match("^[%a][%w+.-]*:") then
     url = "https://" .. url
   end
-  hs.urlevent.openURL(url)
+  open_url(url)
 end
 
 ---@param value string
@@ -512,7 +540,7 @@ local function browser_search(value)
   local url = template:gsub("%%s", function()
     return hs.http.encodeForQuery(query)
   end, 1)
-  hs.urlevent.openURL(url)
+  open_url(url)
 end
 
 local actions = {
@@ -715,7 +743,7 @@ local function activate(choice)
     end
   elseif choice.kind == "tab" or choice.kind == "pref" then
     if choice.url then
-      hs.urlevent.openURL(choice.url)
+      open_url(choice.url)
     end
   elseif choice.kind == "caffeinate" then
     panel.hide()
@@ -724,7 +752,7 @@ local function activate(choice)
     compose()
   elseif choice.kind == "command" then
     if choice.url then
-      hs.urlevent.openURL(choice.url)
+      open_url(choice.url)
     elseif choice.run then
       run({ settings().shell or "/bin/zsh", "-lc", choice.run })
     end

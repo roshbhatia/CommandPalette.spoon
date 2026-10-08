@@ -235,4 +235,9 @@ assert(encoded[#encoded].status.text == "", "review picker leaked machine status
 panel.hide()
 panel.show({ name = "base", rows = {} })
 assert(encoded[#encoded].status.text == "Caffeinate off", "picker changed the base status")
+hs.printf = function() end
+panel.show({ name = "bad", rows = { { text = "bad", badge = function() end } } })
+assert(not view.visible, "invalid payload must not expose stale rows")
+panel.show({ name = "recovered", rows = { { text = "valid" } } })
+assert(view.visible, "valid rows must recover after a rejected payload")
 print("panel tests passed")

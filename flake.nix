@@ -41,6 +41,7 @@
               }
               ''
                     stylua --config-path ${./stylua.toml} --check ${./init.lua} ${./command_palette} ${./tests}
+                    lua ${./tests/boundary.lua} ${./.}
                     lua ${./tests/panel.lua} ${./.}
                     lua ${./tests/lifecycle.lua} ${./.}
                     lua ${./tests/pick_history.lua} ${./.}
