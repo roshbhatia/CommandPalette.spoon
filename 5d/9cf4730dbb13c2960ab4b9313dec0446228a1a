@@ -1,0 +1,31 @@
+command_palette/boundary.lua
+  s_de281cf8e5cd4f::t_6f15c217e770d7 1-41
+command_palette/init.lua
+  s_de281cf8e5cd4f::t_7c6ca22ebe92ba 1,87,89-92,96-107,109-111,114-126,527,530,543,746,755
+command_palette/panel.lua
+  s_de281cf8e5cd4f::t_2a6cc61e01427d 1,39,272-288,292,303-305,312,322,339-342,362,400-402,435,575,633-635
+flake.nix
+  s_de281cf8e5cd4f::t_cb2a5daaa095e3 44
+tests/boundary.lua
+  s_de281cf8e5cd4f::t_550887484cd1f8 1-32
+tests/panel.lua
+  s_de281cf8e5cd4f::t_a9302dc166548c 238-242
+tests/sources.lua
+  s_de281cf8e5cd4f::t_9ba93f218934e7 168-191
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5d9cf4730dbb13c2960ab4b9313dec0446228a1a",
+  "prompts": {},
+  "sessions": {
+    "s_de281cf8e5cd4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11307-12eb-7480-afb6-c32a40ba7deb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
